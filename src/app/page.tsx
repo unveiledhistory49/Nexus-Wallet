@@ -1,10 +1,13 @@
 "use client";
 
-import { DynamicWidget } from "@dynamic-labs/sdk-react-core";
-import { ArrowRightLeft, TrendingUp, Wallet, Shield } from "lucide-react";
-import { useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useNexusWallet } from "@/hooks/useNexusWallet";
+import { ArrowRightLeft, TrendingUp, Wallet, Shield, LogOut, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const { login, logout, authenticated, user } = usePrivy();
+  const { address: nexusAddress, isLoading: isNexusLoading } = useNexusWallet();
   const [balance] = useState("0.00");
 
   return (
@@ -16,7 +19,42 @@ export default function Home() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Nexus</h1>
         </div>
-        <DynamicWidget />
+
+        <div className="flex items-center gap-4">
+          {authenticated ? (
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block text-right">
+                {isNexusLoading ? (
+                  <div className="flex items-center gap-2 text-blue-300">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span className="text-xs">Nexus Initializing...</span>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-blue-300 font-medium">Nexus Account</p>
+                    <p className="text-sm text-white font-mono">
+                      {nexusAddress ? `${nexusAddress.slice(0, 6)}...${nexusAddress.slice(-4)}` : "Not Found"}
+                    </p>
+                  </>
+                )}
+              </div>
+              <button
+                onClick={logout}
+                className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-all"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={login}
+              className="glow-button bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-xl transition-all"
+            >
+              Connect Wallet
+            </button>
+          )}
+        </div>
       </nav>
 
       <section className="w-full grid grid-cols-1 md:grid-cols-3 gap-8">
