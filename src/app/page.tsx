@@ -3,10 +3,10 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useNexusWallet } from "@/hooks/useNexusWallet";
 import { ArrowRightLeft, TrendingUp, Wallet, Shield, LogOut, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function Home() {
-  const { login, logout, authenticated, user } = usePrivy();
+  const { login, logout, authenticated } = usePrivy();
   const { address: nexusAddress, isLoading: isNexusLoading } = useNexusWallet();
   const [balance] = useState("0.00");
 

@@ -4,21 +4,21 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useState, useEffect, useMemo } from "react";
 import {
     createKernelAccount,
-    createKernelAccountClient,
-    createZeroDevPaymasterClient
+    createKernelAccountClient
 } from "@zerodev/sdk";
 import { KERNEL_V3_1 } from "@zerodev/sdk/constants";
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
-import { createPublicClient, http, walletClientToSmartAccountSigner, type Chain } from "viem";
+import { createPublicClient, http, type EIP1193Provider } from "viem";
 import { baseSepolia } from "viem/chains";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { pimlicoClient } from "@/lib/zerodev";
+import { providerToSmartAccountSigner } from "permissionless";
 
 export function useNexusWallet() {
-    const { authenticated, user } = usePrivy();
+    const { authenticated } = usePrivy();
     const { wallets } = useWallets();
     const [address, setAddress] = useState<string | null>(null);
-    const [kernelClient, setKernelClient] = useState<any>(null);
+    const [kernelClient, setKernelClient] = useState<unknown>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const embeddedWallet = useMemo(() =>
@@ -39,7 +39,7 @@ export function useNexusWallet() {
                 });
 
                 // Step 1: Create Signer from Privy provider
-                const signer = await walletClientToSmartAccountSigner(provider as any);
+                const signer = await providerToSmartAccountSigner(provider as EIP1193Provider);
 
                 // Step 2: Create Validator
                 const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
@@ -64,7 +64,7 @@ export function useNexusWallet() {
                     bundlerTransport: http(`https://api.pimlico.io/v2/${baseSepolia.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`),
                     paymaster: {
                         getPaymasterData: (userOperation) => pimlicoClient.getPaymasterData({
-                            userOperation,
+                            userOperation: userOperation as never,
                             entryPoint: entryPoint07Address
                         })
                     }
