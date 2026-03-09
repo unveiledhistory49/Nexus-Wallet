@@ -19,7 +19,7 @@ const entryPoint = {
     version: "0.7" as const,
 };
 
-// Public client (outside for performance + no re-creation)
+// Public client (outside hook for performance)
 const publicClient = createPublicClient({
     chain: baseSepolia,
     transport: http(),
@@ -64,14 +64,16 @@ export function useNexusWallet() {
                     kernelVersion: KERNEL_V3_1,
                 });
 
-                // Step 4: Create Kernel Client with Pimlico (? 2026 syntax)
+                // Step 4: Create Kernel Client with Pimlico (? OFFICIAL 2026 SYNTAX)
                 const client = createKernelAccountClient({
                     account,
                     chain: baseSepolia,
                     client: publicClient,
                     bundlerTransport: http(`https://api.pimlico.io/v2/${baseSepolia.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`),
                     paymaster: {
-                        getPaymasterData: pimlicoClient.sponsorUserOperation,   //  new required syntax
+                        getPaymasterData: async (userOperation) => {
+                            return pimlicoClient.sponsorUserOperation({ userOperation });
+                        },
                     }
                 });
 
