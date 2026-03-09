@@ -11,10 +11,15 @@ import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
 import { createPublicClient, http, type EIP1193Provider } from "viem";
 import { baseSepolia } from "viem/chains";
 import { entryPoint07Address } from "viem/account-abstraction";
-import { pimlicoClient, entryPoint } from "@/lib/zerodev";
+import { pimlicoClient } from "@/lib/zerodev";
 import { toOwner } from "permissionless";
 
-// Public client (moved outside for performance)
+const entryPoint = {
+    address: entryPoint07Address,
+    version: "0.7" as const,
+};
+
+// Public client (outside for performance + no re-creation)
 const publicClient = createPublicClient({
     chain: baseSepolia,
     transport: http(),
@@ -59,14 +64,14 @@ export function useNexusWallet() {
                     kernelVersion: KERNEL_V3_1,
                 });
 
-                // Step 4: Create Kernel Client with Pimlico
+                // Step 4: Create Kernel Client with Pimlico (? 2026 syntax)
                 const client = createKernelAccountClient({
                     account,
                     chain: baseSepolia,
                     client: publicClient,
                     bundlerTransport: http(`https://api.pimlico.io/v2/${baseSepolia.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`),
-                    middleware: {
-                        sponsorUserOperation: pimlicoClient.sponsorUserOperation,
+                    paymaster: {
+                        getPaymasterData: pimlicoClient.sponsorUserOperation,   //  new required syntax
                     }
                 });
 
