@@ -14,6 +14,11 @@ import { entryPoint07Address } from "viem/account-abstraction";
 import { pimlicoClient } from "@/lib/zerodev";
 import { toOwner } from "permissionless";
 
+const entryPoint = {
+    address: entryPoint07Address,
+    version: "0.7" as const,
+};
+
 export function useNexusWallet() {
     const { authenticated } = usePrivy();
     const { wallets } = useWallets();
@@ -44,7 +49,7 @@ export function useNexusWallet() {
                 // Step 2: Create Validator
                 const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
                     signer,
-                    entryPoint: entryPoint07Address,
+                    entryPoint,
                     kernelVersion: KERNEL_V3_1,
                 });
 
@@ -53,20 +58,18 @@ export function useNexusWallet() {
                     plugins: {
                         sudo: ecdsaValidator,
                     },
-                    entryPoint: entryPoint07Address,
+                    entryPoint,
                     kernelVersion: KERNEL_V3_1,
                 });
 
                 // Step 4: Create Kernel Client with Pimlico Paymaster
                 const client = createKernelAccountClient({
                     account,
+                    entryPoint,
                     chain: baseSepolia,
                     bundlerTransport: http(`https://api.pimlico.io/v2/${baseSepolia.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`),
-                    paymaster: {
-                        getPaymasterData: (userOperation) => pimlicoClient.getPaymasterData({
-                            userOperation: userOperation as never,
-                            entryPoint: entryPoint07Address
-                        })
+                    middleware: {
+                        sponsorUserOperation: pimlicoClient.sponsorUserOperation,
                     }
                 });
 
