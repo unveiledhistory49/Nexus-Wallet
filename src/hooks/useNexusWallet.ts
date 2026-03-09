@@ -11,7 +11,7 @@ import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
 import { createPublicClient, http, type EIP1193Provider } from "viem";
 import { baseSepolia } from "viem/chains";
 import { entryPoint07Address } from "viem/account-abstraction";
-import { pimlicoClient } from "@/lib/zerodev";
+import { createPimlicoPaymasterClient } from "permissionless/clients/pimlico";
 import { toOwner } from "permissionless";
 
 const entryPoint = {
@@ -19,7 +19,7 @@ const entryPoint = {
     version: "0.7" as const,
 };
 
-// Public client (outside hook for performance)
+// Public client
 const publicClient = createPublicClient({
     chain: baseSepolia,
     transport: http(),
@@ -45,17 +45,17 @@ export function useNexusWallet() {
                 setIsLoading(true);
                 const provider = await embeddedWallet.getEthereumProvider();
 
-                // Step 1: Create Signer from Privy provider
+                // Step 1: Signer
                 const signer = await toOwner({ owner: provider as EIP1193Provider });
 
-                // Step 2: Create Validator
+                // Step 2: Validator
                 const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
                     signer,
                     entryPoint,
                     kernelVersion: KERNEL_V3_1,
                 });
 
-                // Step 3: Create Kernel Account
+                // Step 3: Kernel Account
                 const account = await createKernelAccount(publicClient, {
                     plugins: {
                         sudo: ecdsaValidator,
@@ -64,17 +64,18 @@ export function useNexusWallet() {
                     kernelVersion: KERNEL_V3_1,
                 });
 
-                // Step 4: Create Kernel Client with Pimlico (? OFFICIAL 2026 SYNTAX)
+                // Step 4: Pimlico Paymaster Client (official pattern)
+                const pimlicoPaymaster = createPimlicoPaymasterClient({
+                    transport: http(`https://api.pimlico.io/v2/${baseSepolia.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`),
+                });
+
+                // Step 5: Kernel Client (direct paymaster client - no wrapper, no type errors)
                 const client = createKernelAccountClient({
                     account,
                     chain: baseSepolia,
                     client: publicClient,
                     bundlerTransport: http(`https://api.pimlico.io/v2/${baseSepolia.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`),
-                    paymaster: {
-                        getPaymasterData: async (userOperation) => {
-                            return pimlicoClient.sponsorUserOperation({ userOperation });
-                        },
-                    }
+                    paymaster: pimlicoPaymaster,
                 });
 
                 setAddress(account.address);
