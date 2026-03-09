@@ -12,7 +12,7 @@ import { createPublicClient, http, type EIP1193Provider } from "viem";
 import { baseSepolia } from "viem/chains";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { pimlicoClient } from "@/lib/zerodev";
-import { providerToSmartAccountSigner } from "permissionless";
+import { toOwner } from "permissionless";
 
 export function useNexusWallet() {
     const { authenticated } = usePrivy();
@@ -39,7 +39,7 @@ export function useNexusWallet() {
                 });
 
                 // Step 1: Create Signer from Privy provider
-                const signer = await providerToSmartAccountSigner(provider as EIP1193Provider);
+                const signer = await toOwner({ owner: provider as EIP1193Provider });
 
                 // Step 2: Create Validator
                 const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
