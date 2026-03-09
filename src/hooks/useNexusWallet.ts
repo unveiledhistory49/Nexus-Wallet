@@ -11,13 +11,14 @@ import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
 import { createPublicClient, http, type EIP1193Provider } from "viem";
 import { baseSepolia } from "viem/chains";
 import { entryPoint07Address } from "viem/account-abstraction";
-import { pimlicoClient } from "@/lib/zerodev";
+import { pimlicoClient, entryPoint } from "@/lib/zerodev";
 import { toOwner } from "permissionless";
 
-const entryPoint = {
-    address: entryPoint07Address,
-    version: "0.7" as const,
-};
+// Public client (moved outside for performance)
+const publicClient = createPublicClient({
+    chain: baseSepolia,
+    transport: http(),
+});
 
 export function useNexusWallet() {
     const { authenticated } = usePrivy();
@@ -38,10 +39,6 @@ export function useNexusWallet() {
             try {
                 setIsLoading(true);
                 const provider = await embeddedWallet.getEthereumProvider();
-                const publicClient = createPublicClient({
-                    chain: baseSepolia,
-                    transport: http(),
-                });
 
                 // Step 1: Create Signer from Privy provider
                 const signer = await toOwner({ owner: provider as EIP1193Provider });
@@ -62,11 +59,11 @@ export function useNexusWallet() {
                     kernelVersion: KERNEL_V3_1,
                 });
 
-                // Step 4: Create Kernel Client with Pimlico Paymaster
+                // Step 4: Create Kernel Client with Pimlico
                 const client = createKernelAccountClient({
                     account,
-                    entryPoint,
                     chain: baseSepolia,
+                    client: publicClient,
                     bundlerTransport: http(`https://api.pimlico.io/v2/${baseSepolia.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`),
                     middleware: {
                         sponsorUserOperation: pimlicoClient.sponsorUserOperation,
